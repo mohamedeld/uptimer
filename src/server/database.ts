@@ -1,13 +1,20 @@
 import { Sequelize } from "sequelize";
 import { env } from "./config";
 
-const sequelize = new Sequelize(env.POSTGRES_DB as string, {
-  dialect: "postgres",
-  logging: false,
-  dialectOptions: {
-    multipleStatements: true,
+const sequelize = new Sequelize(
+  env.POSTGRES_DB as string,
+  env.POSTGRES_USER as string,
+  env.POSTGRES_PASSWORD as string,
+  {
+    host: env.POSTGRES_HOST,
+    port: Number(env.POSTGRES_PORT),
+    dialect: "postgres",
+    logging: false,
+    dialectOptions: {
+      multipleStatements: true,
+    },
   },
-}); // Example for postgres
+); // Example for postgres
 
 const connectToDB = async () => {
   try {

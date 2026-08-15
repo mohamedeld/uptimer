@@ -12,4 +12,8 @@ export const env = {
   SENDER_EMAIL_PASSWORD: process.env.SENDER_EMAIL_PASSWORD as string,
   CLIENT_URL: process.env.CLIENT_URL as string,
   PORT: process.env.PORT,
+  POSTGRES_HOST: process.env.POSTGRES_HOST as string,
+  POSTGRES_PORT: process.env.POSTGRES_PORT as string,
+  POSTGRES_USER: process.env.POSTGRES_USER as string,
+  POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD as string,
 };

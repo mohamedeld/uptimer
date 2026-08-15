@@ -7,13 +7,12 @@ import {
   getNotificationsGroups,
 } from "@app/services/notification.service";
 
-import {
-  createNewUser,
-  getUserByUserNameOrEmail,
-} from "@app/services/user.service";
+import { createNewUser } from "@app/services/user.service";
 import { Request } from "express";
 import { GraphQLError } from "graphql";
 import { toLower, upperFirst } from "lodash";
+import { UserModel } from "@app/models/user.model";
+import { Op } from "sequelize";
 
 export const UserResolver = {
   Mutation: {
@@ -25,8 +24,16 @@ export const UserResolver = {
       const { req } = contextValue;
       const { user } = args;
       const { username, email, password } = user;
-      const checkIfUserExist: IUserDocument | undefined =
-        await getUserByUserNameOrEmail(username!, email!);
+      const checkIfUserExist = await UserModel.findOne({
+        where: {
+          [Op.or]: [
+            { username: upperFirst(username) },
+            {
+              email: toLower(email),
+            },
+          ],
+        },
+      });
       if (checkIfUserExist) {
         throw new GraphQLError("Invalid crendentials. Email or username.");
       }
