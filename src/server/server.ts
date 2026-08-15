@@ -16,25 +16,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin
 import { expressMiddleware } from "@apollo/server/express4";
 import cookieSession from "cookie-session";
 import { mergedGQLSchema } from "@app/graphql/schema";
-
-const typeDefs = `#graphql 
-    type User{
-        username: String
-    }
-    type Query{
-        user: User
-    }
-`;
-
-const resolvers = {
-  Query: {
-    user() {
-      return {
-        username: "mohamed",
-      };
-    },
-  },
-};
+import { resolvers } from "@app/graphql/resolver";
 
 export default class MonitorServer {
   private app: Express;
@@ -46,7 +28,7 @@ export default class MonitorServer {
     this.httpServer = new http.Server(app);
     const schema = makeExecutableSchema({
       typeDefs: mergedGQLSchema,
-      resolvers,
+      resolvers: resolvers,
     });
     this.server = new ApolloServer({
       schema,
