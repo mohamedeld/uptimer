@@ -21,7 +21,7 @@ export async function getNotificationGroupsByUserId(
       where: {
         userId,
       },
-      order: ["createdAt", "DESC"],
+      order: [["createdAt", "DESC"]],
     });
     return notifications?.dataValues as INotificationDocument;
   } catch (error) {
@@ -36,11 +36,25 @@ export async function getNotificationsGroups(
       where: {
         userId,
       },
-      order: ["createdAt", "DESC"],
+      order: [["createdAt", "DESC"]],
     });
     return notifications.map(
       (notification) => notification.dataValues,
     ) as INotificationDocument[];
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+export async function getNotificationGroupById(
+  notificationId: number,
+): Promise<INotificationDocument> {
+  try {
+    const notification = await NotificationModel.findByPk(notificationId);
+    if (!notification) {
+      throw new Error("Notification group not found");
+    }
+    return notification?.dataValues as INotificationDocument;
   } catch (error) {
     throw new Error(error);
   }

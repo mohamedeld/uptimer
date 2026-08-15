@@ -27,7 +27,8 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
     "typescript": "^5.8.3",
-    "typescript-transform-paths": "^3.5.5"
+    "typescript-transform-paths": "^3.5.5",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@types/cookie-session": "^2.0.49",

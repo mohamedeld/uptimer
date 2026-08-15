@@ -7,14 +7,45 @@ import {
   getNotificationsGroups,
 } from "@app/services/notification.service";
 
-import { createNewUser } from "@app/services/user.service";
+import {
+  createNewUser,
+  getUserByProp,
+  getUserBySocialId,
+} from "@app/services/user.service";
 import { Request } from "express";
 import { GraphQLError } from "graphql";
 import { toLower, upperFirst } from "lodash";
 import { UserModel } from "@app/models/user.model";
 import { Op } from "sequelize";
+import { authenticateGraphQLRoute, isEmail } from "@app/utils/utils";
+import { UserLoginRules, UserRegisterationRules } from "@app/validations/user";
 
 export const UserResolver = {
+  Query: {
+    async checkCurrentUser(
+      _: undefined,
+      __: undefined,
+      contextValue: AppContext,
+    ) {
+      const { req } = contextValue;
+      authenticateGraphQLRoute(req);
+      const notifications = await getNotificationsGroups(req.currentUser!.id);
+      return {
+        user: {
+          id: req.currentUser?.id,
+          username: req.currentUser?.username,
+          email: req.currentUser?.email,
+          createdAt: new Date(),
+        },
+        notifications,
+      };
+    },
+  },
+  User: {
+    createdAt: (user: IUserDocument) => {
+      return user.createdAt?.toISOString() ?? null;
+    },
+  },
   Mutation: {
     async registerUser(
       _: undefined,
@@ -23,6 +54,7 @@ export const UserResolver = {
     ) {
       const { req } = contextValue;
       const { user } = args;
+      await UserRegisterationRules.validate(user, { abortEarly: false });
       const { username, email, password } = user;
       const checkIfUserExist = await UserModel.findOne({
         where: {
@@ -45,6 +77,78 @@ export const UserResolver = {
       const result: IUserDocument | undefined = await createNewUser(authData);
       const response = await userReturnValue(req, result, "register");
       return response;
+    },
+    async loginUser(
+      _: undefined,
+      args: { username: string; password: string },
+      contextValue: AppContext,
+    ) {
+      const { req } = contextValue;
+      const { username, password } = args;
+      await UserLoginRules.validate(
+        { username, password },
+        { abortEarly: false },
+      );
+      const isValidEmail = isEmail(username);
+      const type: string = !isValidEmail ? "username" : "email";
+      const existingUser: IUserDocument | undefined = await getUserByProp(
+        username,
+        type,
+      );
+      if (!existingUser) {
+        throw new GraphQLError("Invalid credentials");
+      }
+      const passwordsMatch = await UserModel.prototype.comparePassword(
+        password,
+        existingUser?.password!,
+      );
+      if (!passwordsMatch) {
+        throw new GraphQLError("Invalid credentials");
+      }
+      const response: IUserResponse = await userReturnValue(
+        req,
+        existingUser,
+        "login",
+      );
+      return response;
+    },
+    async authSocialUser(
+      _: undefined,
+      args: { user: IUserDocument },
+      contextValue: AppContext,
+    ) {
+      const { req } = contextValue;
+      const { user } = args;
+      const { username, email, googleId } = user;
+      const checkIfUserExist: IUserDocument | undefined =
+        await getUserBySocialId(googleId!, email!);
+      if (checkIfUserExist) {
+        const response: IUserResponse = await userReturnValue(
+          req,
+          checkIfUserExist,
+          "login",
+        );
+        return response;
+      } else {
+        const authData: IUserDocument = {
+          username: upperFirst(username),
+          email: toLower(email),
+          googleId: googleId,
+        } as IUserDocument;
+        const result: IUserDocument | undefined = await createNewUser(authData);
+        const response: IUserResponse = await userReturnValue(
+          req,
+          result,
+          "register",
+        );
+        return response;
+      }
+    },
+    logout(_: undefined, __: undefined, appContext: AppContext) {
+      const { req } = appContext;
+      req.session = null;
+      req.currentUser = undefined;
+      return null;
     },
   },
 };

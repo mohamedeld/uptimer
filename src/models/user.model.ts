@@ -38,12 +38,10 @@ const UserModel: ModelDefined<IUserDocument, UserCreationAttributes> &
       type: DataTypes.STRING,
       allowNull: false,
     },
-    createdAt: {
-      type: DataTypes.DATE,
-      defaultValue: Date.now,
-    },
   },
   {
+    timestamps: true,
+
     indexes: [
       {
         unique: true,
